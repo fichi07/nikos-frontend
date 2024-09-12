@@ -1,63 +1,65 @@
+"use client";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/atomics/dropdown-menu'
-import { Input } from '@/components/atomics/input'
-import Title from '@/components/atomics/title'
-import Image from 'next/image'
+} from "@/components/atomics/dropdown-menu";
+import { Input } from "@/components/atomics/input";
+import Title from "@/components/atomics/title";
+import Image from "next/image";
+import Link from "next/link";
+import { useSession } from "next-auth/react";
+import { signOut } from "next-auth/react";
 
 function TopMenu() {
+  const { data: session } = useSession();
   return (
-    <header className='w-full p-[30px] rounded-[30px] bg-white flex justify-between items-center'>
+    <header className="w-full p-[30px] rounded-[30px] bg-white flex justify-between items-center">
       <div>
         <Input
-          icon='/icons/search.svg'
-          variant='auth'
-          placeholder='Search listing or rental by name...'
-          className='w-[400px]'
+          icon="/icons/search.svg"
+          variant="auth"
+          placeholder="Search listing or rental by name..."
+          className="w-[400px]"
         />
       </div>
 
       <DropdownMenu>
-        <DropdownMenuTrigger className='outline-none'>
-          <div className='flex items-center space-x-2'>
+        <DropdownMenuTrigger
+          className="outline-none"
+          data-login={!!session?.user}
+        >
+          <div className="flex items-center space-x-2">
             <Title
-              title='Ariana Xian'
-              subtitle='Howdy'
-              section='header'
+              title={session?.user.name}
+              subtitle="Howdy"
+              section="header"
               reverse
             />
             <Image
-              src='/images/avatar.webp'
-              alt='avatar'
+              src="/images/avatar.webp"
+              alt="avatar"
               height={48}
               width={48}
-              className='rounded-full'
+              className="rounded-full"
             />
           </div>
         </DropdownMenuTrigger>
-        <DropdownMenuContent className='w-[240px] mr-8 space-y-4'>
+        <DropdownMenuContent className="w-[240px] mr-8 space-y-4">
           <DropdownMenuItem>
-            Dashboard
+            <Link href={"/dashboard"}>Dashboard</Link>
           </DropdownMenuItem>
           <DropdownMenuItem>
-            My Listings
+            <Link href={"/dashboard/my-listings"}>My Listings</Link>
           </DropdownMenuItem>
-          <DropdownMenuItem>
-            My Rentals
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            Settings
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            Logout
-          </DropdownMenuItem>
+          <DropdownMenuItem>My Rentals</DropdownMenuItem>
+          <DropdownMenuItem>Settings</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => signOut()}>Logout</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     </header>
-  )
+  );
 }
 
-export default TopMenu
+export default TopMenu;

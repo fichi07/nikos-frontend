@@ -15,11 +15,11 @@ function SideMenu() {
         <h1 className="font-semibold text-sm leading-[21px]">General</h1>
         <ul className="mt-3.5 flex flex-col space-y-6">
           <ItemMenu image="/icons/card.svg" title="overview" url="/dashboard" />
-          <ItemMenu
+          {/*     <ItemMenu
             image="/icons/house-2 2.svg"
             title="my listings"
             url="/dashboard/my-listings"
-          />
+          /> */}
           <ItemMenu image="/icons/building.svg" title="my rentals" url="/" />
           <ItemMenu
             image="/icons/card.svg"

@@ -1,3 +1,4 @@
+"use client";
 import Image from "next/image";
 import Breadcrumbs from "@/components/molecules/breadcrumbs";
 import CardBooking from "@/components/molecules/card/card-booking";
@@ -8,8 +9,64 @@ import { DatePickerDemo } from "@/components/molecules/date-picker";
 import Link from "next/link";
 import Listing from "./listing";
 import Review from "./review";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { useGetDetailListingQuery } from "@/services/listing.service";
+import { useSearchParams } from "next/navigation";
+import moment from "moment";
+import { moneyFormat } from "@/lib/utils";
+import { useMemo } from "react";
+import { useTransactionMutation } from "@/services/transaction.serevice";
+import { toast, useToast } from "@/components/atomics/use-toast";
 
-function Checkout() {
+function Checkout({ params }: { params: { id: string } }) {
+  const { data: listing } = useGetDetailListingQuery(params.id);
+  const [transaction, { isLoading }] = useTransactionMutation();
+  const searchParams = useSearchParams();
+  const { toast } = useToast();
+  const router = useRouter();
+  const [startDate, setStartDate] = useState<Date | undefined>(
+    moment(searchParams.get("start_date")).toDate()
+  );
+  const [endtDate, setEndDate] = useState<Date | undefined>(
+    moment(searchParams.get("end_date")).toDate()
+  );
+
+  const booking = useMemo(() => {
+    let totalDays = 0,
+      subTotal = 0,
+      tax = 0,
+      grandTotal = 0;
+
+    if (startDate && endtDate) {
+      totalDays = moment(endtDate).diff(startDate, "days");
+      subTotal = totalDays * listing?.data.price_per_day;
+      tax = subTotal * 0.1;
+      grandTotal = subTotal + tax;
+    }
+    return { totalDays, subTotal, tax, grandTotal };
+  }, [startDate, endtDate, listing]);
+
+  const handleCheckout = async () => {
+    /*     /booking-success/1112223aa / success; */
+    try {
+      const data = {
+        listing_id: listing.data.id,
+        start_date: moment(startDate).format("YYYY-MM-DD"),
+        end_date: moment(endtDate).format("YYYY-MM-DD"),
+      };
+      const res = await transaction(data).unwrap();
+      if (res.success) {
+        router.push(`/booking-success/${res.data.id}/success`);
+      }
+    } catch (error: any) {
+      toast({
+        title: "something went worng",
+        description: error.data.message,
+        variant: "destructive",
+      });
+    }
+  };
   return (
     <main>
       <section
@@ -25,7 +82,7 @@ function Checkout() {
         id="booking-information-section"
         className="container mx-auto flex space-x-[50px] -mt-[148px]"
       >
-        <Listing />
+        {listing && <Listing listing={listing.data} />}
 
         <div className="w-full max-w-[460px] pt-[50px]">
           <div>
@@ -34,15 +91,35 @@ function Checkout() {
             </h1>
             <div className="rounded-[30px] mt-2.5 p-[30px] bg-white border border-border shadow-indicator space-y-5">
               <div className="space-y-5">
-                <DatePickerDemo />
-                <DatePickerDemo />
+                <DatePickerDemo
+                  placeHolder="Start Date"
+                  date={startDate}
+                  setDate={setStartDate}
+                />
+                <DatePickerDemo
+                  placeHolder="End Date"
+                  date={endtDate}
+                  setDate={setEndDate}
+                />
               </div>
               <div className="space-y-5">
-                <CardBooking title="Total days" value="30 days" />
-                <CardBooking title="Sub total" value="$83,422" />
-                <CardBooking title="Tax (15%)" value="$23,399" />
-                <CardBooking title="Insurance" value="$7,492" />
-                <CardBooking title="Grand total price" value="$103,940" />
+                <CardBooking
+                  title="Total days"
+                  value={`${booking.totalDays} days`}
+                />
+                <CardBooking
+                  title="Sub total"
+                  value={moneyFormat.format(booking.subTotal)}
+                />
+                <CardBooking
+                  title="Tax (10%)"
+                  value={moneyFormat.format(booking.tax)}
+                />
+
+                <CardBooking
+                  title="Grand total price"
+                  value={moneyFormat.format(booking.grandTotal)}
+                />
               </div>
             </div>
           </div>
@@ -94,11 +171,16 @@ function Checkout() {
                   I agree with terms & conditions
                 </label>
               </div>
-              <Link href={`/booking-success/12321aa12/success`}>
-                <Button variant="default" size="default" className="mt-4">
-                  Make a Payment
-                </Button>
-              </Link>
+
+              <Button
+                variant="default"
+                size="default"
+                className="mt-4"
+                onClick={handleCheckout}
+                disabled={isLoading}
+              >
+                Make a Payment
+              </Button>
             </div>
           </div>
         </div>
